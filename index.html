@@ -51,7 +51,7 @@
             position: relative;
         }
 
-        /* Dynamic Sticker Grid (4 columns of 44mm or 5 columns of 37mm fit neatly on A4) */
+        /* Dynamic Sticker Grid */
         .sticker-grid {
             display: flex;
             flex-wrap: wrap;
@@ -235,7 +235,7 @@
     <!-- MAIN WORKSPACE -->
     <div id="mainLayout" class="flex-1 flex flex-col lg:flex-row overflow-hidden">
 
-        <!-- LEFT SIDEBAR: CONTROLS (Visible on PC, toggleable on Mobile) -->
+        <!-- LEFT SIDEBAR: CONTROLS -->
         <aside id="controlPanel" class="no-print w-full lg:w-[410px] xl:w-[430px] bg-slate-900 border-r border-slate-800 flex flex-col lg:h-[calc(100vh-57px)] overflow-y-auto">
             
             <!-- Control Tabs -->
@@ -301,14 +301,14 @@
                             <button id="orderBtnAddressBottom" onclick="setLineOrder('address-bottom')" class="p-2.5 rounded-lg border text-left transition flex items-center justify-between">
                                 <div>
                                     <div class="font-bold text-white">Price Middle, Address Bottom</div>
-                                    <div class="text-[11px] text-slate-400">Supplyer by → A.S. ENTERPRISE → MRP. 220 TK → Address</div>
+                                    <div class="text-[11px] text-slate-400">Supplied by → A.S. ENTERPRISE → MRP. 220 TK → Address</div>
                                 </div>
                                 <span class="text-emerald-400 font-bold">✓</span>
                             </button>
                             <button id="orderBtnPriceBottom" onclick="setLineOrder('price-bottom')" class="p-2.5 rounded-lg border text-left transition flex items-center justify-between">
                                 <div>
-                                    <div class="font-bold text-white">Address Middle, Price Bottom (Screenshot)</div>
-                                    <div class="text-[11px] text-slate-400">Supplyer by → A.S. ENTERPRISE → Address → MRP. 220 TK</div>
+                                    <div class="font-bold text-white">Address Middle, Price Bottom</div>
+                                    <div class="text-[11px] text-slate-400">Supplied by → A.S. ENTERPRISE → Address → MRP. 220 TK</div>
                                 </div>
                                 <span class="text-emerald-400 font-bold hidden">✓</span>
                             </button>
@@ -318,7 +318,7 @@
                     <div class="space-y-3 bg-slate-800/50 border border-slate-800 rounded-xl p-3">
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">Line 1 (Top Header)</label>
-                            <input id="inputTitle" type="text" value="Supplyer by" oninput="updateTextConfig()" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-white font-semibold focus:border-emerald-400 outline-none">
+                            <input id="inputTitle" type="text" value="Supplied by" oninput="updateTextConfig()" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-white font-semibold focus:border-emerald-400 outline-none">
                         </div>
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">Line 2 (Company Name)</label>
@@ -355,7 +355,7 @@
                     <div class="bg-slate-800/60 border border-slate-800 rounded-xl p-3 space-y-3.5">
                         <div>
                             <div class="flex justify-between mb-1">
-                                <span class="text-slate-300 font-semibold">Sticker Width (Side Long)</span>
+                                <span class="text-slate-300 font-semibold">Sticker Width</span>
                                 <span id="lblWidth" class="text-emerald-400 font-bold">44 mm</span>
                             </div>
                             <input id="rngWidth" type="range" min="25" max="60" step="0.5" value="44" oninput="updateSizeConfig()" class="w-full accent-emerald-400">
@@ -371,7 +371,7 @@
 
                         <div>
                             <div class="flex justify-between mb-1">
-                                <span class="text-slate-300 font-semibold">Line Gap (2 Line-er Majhe Gap)</span>
+                                <span class="text-slate-300 font-semibold">Line Gap</span>
                                 <span id="lblLineGap" class="text-emerald-400 font-bold">1 px</span>
                             </div>
                             <input id="rngLineGap" type="range" min="0" max="6" step="0.5" value="1" oninput="updateSizeConfig()" class="w-full accent-emerald-400">
@@ -387,7 +387,7 @@
 
                         <div>
                             <div class="flex justify-between mb-1">
-                                <span class="text-slate-300 font-semibold">Price Font Size (Boro Price)</span>
+                                <span class="text-slate-300 font-semibold">Price Font Size</span>
                                 <span id="lblPriceFont" class="text-emerald-400 font-bold">13 pt</span>
                             </div>
                             <input id="rngPriceFont" type="range" min="9" max="18" step="0.5" value="13" oninput="updateSizeConfig()" class="w-full accent-emerald-400">
@@ -397,7 +397,7 @@
 
             </div>
 
-            <!-- Mobile Switch to Preview Button at Bottom of Sidebar -->
+            <!-- Mobile Switch to Preview Button -->
             <div class="p-3 border-t border-slate-800 bg-slate-950 flex lg:hidden gap-2">
                 <button onclick="setMobileView('preview')" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg text-xs">
                     👁️ View A4 Preview
@@ -408,10 +408,9 @@
             </div>
         </aside>
 
-        <!-- RIGHT AREA: CRISP 1:1 A4 PREVIEW (Zero Blurry Scaling) -->
+        <!-- RIGHT AREA: CRISP A4 PREVIEW -->
         <main id="previewPanel" class="hidden lg:flex flex-1 flex-col bg-slate-950 lg:h-[calc(100vh-57px)] overflow-hidden">
             
-            <!-- Sub-bar above A4 Preview (Hidden on Print) -->
             <div class="no-print bg-slate-900/80 border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -442,12 +441,12 @@
         ];
 
         let config = {
-            title: "Supplyer by",
+            title: "Supplied by",
             name: "A.S. ENTERPRISE",
             prefix: "MRP.",
             suffix: "TK",
             address: "Kaji Bari, Kuril, Vatara, Dhaka",
-            lineOrder: "address-bottom", // 'address-bottom' or 'price-bottom'
+            lineOrder: "address-bottom",
             width: 44,
             height: 25,
             radius: 4.5,
@@ -562,7 +561,6 @@
                 .replace(/"/g, "&quot;");
         }
 
-        // Calculate how many stickers fit per A4 page and paginate cleanly
         function renderA4Sheets() {
             const wrapper = document.getElementById('a4PagesWrapper');
             let allStickers = [];
@@ -609,7 +607,7 @@
                     <div class="a4-sheet flex items-center justify-center">
                         <div class="text-center p-8">
                             <p class="text-lg font-bold text-slate-700">No Stickers Selected</p>
-                            <p class="text-xs text-slate-500 mt-1">Increase quantity or tap a price chip on the left panel.</p>
+                            <p class="text-xs text-slate-500 mt-1">Add custom price and quantity from the left panel.</p>
                             <button onclick="resetToDefault220()" class="mt-4 px-4 py-2 bg-emerald-500 text-slate-950 font-bold rounded-lg text-xs">
                                 Restore Default (220 TK × 30 pcs)
                             </button>
@@ -620,7 +618,6 @@
                 return;
             }
 
-            // Calculate columns and rows that fit inside usable A4 area (196mm x 281mm)
             const cols = Math.max(1, Math.floor((196 + 3) / (config.width + 3)));
             const rows = Math.max(1, Math.floor((281 + 3) / (config.height + 3)));
             const stickersPerPage = cols * rows;
@@ -701,7 +698,6 @@
             updateSizeConfig();
         }
 
-        // Sidebar Tab Switcher
         function switchTab(tab) {
             ['prices', 'layout', 'size'].forEach(t => {
                 document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('hidden');
@@ -715,7 +711,6 @@
             activeBtn.className = "flex-1 py-3 border-b-2 border-emerald-400 text-emerald-400 text-center transition";
         }
 
-        // Mobile View Switcher (Edit vs 1:1 Crisp Preview)
         function setMobileView(view) {
             const controlPanel = document.getElementById('controlPanel');
             const previewPanel = document.getElementById('previewPanel');
