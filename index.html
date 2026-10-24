@@ -212,7 +212,7 @@
                 Edit Prices
             </button>
             <button id="mobileBtnPreview" onclick="setMobileView('preview')" class="px-3 py-1 rounded-md text-xs font-bold text-slate-300 hover:text-white transition">
-                Preview (<span id="mobileTotalCount">30</span>)
+                Preview (<span id="mobileTotalCount">0</span>)
             </button>
         </div>
 
@@ -220,7 +220,7 @@
         <div class="flex items-center gap-2 sm:gap-3">
             <div class="hidden sm:flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs">
                 <span class="text-slate-400">Total Stickers:</span>
-                <span id="headerTotalBadge" class="font-extrabold text-emerald-400">30 pcs</span>
+                <span id="headerTotalBadge" class="font-extrabold text-emerald-400">0 pcs</span>
             </div>
 
             <button onclick="window.print()" class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold rounded-lg text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition flex items-center gap-1.5">
@@ -258,7 +258,7 @@
                     
                     <!-- Custom Price & Qty Input -->
                     <div class="bg-slate-800/90 border border-slate-700 rounded-xl p-3 space-y-2.5">
-                        <label class="font-bold text-slate-200 block">Add Custom Price & Sticker Count:</label>
+                        <label class="font-bold text-slate-200 block">Add Price & Sticker Count:</label>
                         <div class="flex gap-2">
                             <div class="flex-1">
                                 <span class="text-[10px] text-slate-400 block mb-1">Price (TK)</span>
@@ -283,7 +283,7 @@
                             <div class="flex gap-1.5">
                                 <button onclick="setAllQuantities(24)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] border border-slate-700">All 24</button>
                                 <button onclick="setAllQuantities(30)" class="px-2 py-0.5 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/70 rounded text-[11px] font-bold">All 30</button>
-                                <button onclick="resetToDefault220()" class="px-2 py-0.5 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 rounded text-[11px] border border-slate-700">Reset (220×30)</button>
+                                <button onclick="clearAllPrices()" class="px-2 py-0.5 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 rounded text-[11px] border border-slate-700">Clear All</button>
                             </div>
                         </div>
 
@@ -417,7 +417,7 @@
                     <span><b>100% Crisp Vector Preview:</b> Pure black text (#000) with zero shadow.</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <span id="pageCountInfo" class="font-bold text-emerald-400">1 A4 Page (30 Stickers)</span>
+                    <span id="pageCountInfo" class="font-bold text-emerald-400">0 Stickers</span>
                     <button onclick="setLineOrder(config.lineOrder === 'address-bottom' ? 'price-bottom' : 'address-bottom')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-[11px] font-semibold text-white transition">
                         ⇅ Swap Address / Price Position
                     </button>
@@ -435,10 +435,8 @@
     </div>
 
     <script>
-        // Default state: 1 item -> 220 TK with 30 pcs
-        let priceItems = [
-            { id: 1, price: 220, qty: 30 }
-        ];
+        // Default state: Empty list (No default items)
+        let priceItems = [];
 
         let config = {
             title: "Supplied by",
@@ -507,11 +505,12 @@
         }
 
         function removePriceItem(id) {
-            if (priceItems.length <= 1) {
-                priceItems[0].qty = 0;
-            } else {
-                priceItems = priceItems.filter(p => p.id !== id);
-            }
+            priceItems = priceItems.filter(p => p.id !== id);
+            refreshAll();
+        }
+
+        function clearAllPrices() {
+            priceItems = [];
             refreshAll();
         }
 
@@ -520,14 +519,19 @@
             refreshAll();
         }
 
-        function resetToDefault220() {
-            priceItems = [{ id: 1, price: 220, qty: 30 }];
-            refreshAll();
-        }
-
         // Render Active Price Rows
         function renderPriceList() {
             const container = document.getElementById('priceListContainer');
+            if (priceItems.length === 0) {
+                container.innerHTML = `
+                    <div class="p-4 rounded-xl border border-dashed border-slate-700 text-center text-slate-400">
+                        <p class="font-semibold">No price added yet.</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Use the box above to add your price & quantity.</p>
+                    </div>
+                `;
+                return;
+            }
+
             container.innerHTML = priceItems.map((item, idx) => `
                 <div class="bg-slate-800/90 border border-slate-700 rounded-xl p-2.5 flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
@@ -606,11 +610,8 @@
                 wrapper.innerHTML = `
                     <div class="a4-sheet flex items-center justify-center">
                         <div class="text-center p-8">
-                            <p class="text-lg font-bold text-slate-700">No Stickers Selected</p>
-                            <p class="text-xs text-slate-500 mt-1">Add custom price and quantity from the left panel.</p>
-                            <button onclick="resetToDefault220()" class="mt-4 px-4 py-2 bg-emerald-500 text-slate-950 font-bold rounded-lg text-xs">
-                                Restore Default (220 TK × 30 pcs)
-                            </button>
+                            <p class="text-lg font-bold text-slate-700">No Stickers to Preview</p>
+                            <p class="text-xs text-slate-500 mt-1">Please enter your price and quantity on the left panel to generate stickers.</p>
                         </div>
                     </div>
                 `;
