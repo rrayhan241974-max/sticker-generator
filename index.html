@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.S. ENTERPRISE - A4 Price Sticker Sheet Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sticker-width: 44mm;
+            --sticker-height: 25mm;
+            --sticker-radius: 4.5mm;
+            --sticker-border: 1.5px;
+            --sticker-gap-x: 3mm;
+            --sticker-gap-y: 3mm;
+            --line-gap: 1px;
+            --title-size: 8.5pt;
+            --name-size: 10pt;
+            --price-size: 13pt;
+            --address-size: 7pt;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: geometricPrecision;
+        }
+
+        body {
+            font-family: 'Inter', Arial, Helvetica, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Standard A4 Paper Container - NO CSS transform scale() to avoid blurry/shadowy text */
+        .a4-sheet {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 8mm 7mm;
+            margin: 0 auto 24px auto;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+
+        /* Dynamic Sticker Grid (4 columns of 44mm or 5 columns of 37mm fit neatly on A4) */
+        .sticker-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sticker-gap-y) var(--sticker-gap-x);
+            justify-content: center;
+            align-content: flex-start;
+        }
+
+        /* Crisp Sticker Box - Zero shadows, pure black on pure white */
+        .sticker-item {
+            width: var(--sticker-width);
+            height: var(--sticker-height);
+            border: var(--sticker-border) solid #000000 !important;
+            border-radius: var(--sticker-radius);
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            padding: 1.2mm 1.5mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            -webkit-text-stroke: 0px transparent !important;
+            filter: none !important;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        /* Ultra-Crisp Sticker Typography */
+        .st-line {
+            display: block;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            color: #000000 !important;
+            text-shadow: none !important;
+            -webkit-text-stroke: 0 !important;
+            line-height: 1.12;
+            margin-bottom: var(--line-gap);
+        }
+
+        .st-line:last-child {
+            margin-bottom: 0;
+        }
+
+        .st-title {
+            font-size: var(--title-size);
+            font-weight: 700;
+            letter-spacing: 0px;
+        }
+
+        .st-name {
+            font-size: var(--name-size);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -0.1px;
+            white-space: nowrap;
+        }
+
+        .st-price {
+            font-size: var(--price-size);
+            font-weight: 800;
+            letter-spacing: -0.2px;
+            white-space: nowrap;
+        }
+
+        .st-address {
+            font-size: var(--address-size);
+            font-weight: 600;
+            letter-spacing: -0.1px;
+            white-space: nowrap;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+
+        /* Print Media Query - Pure Vector Output */
+        @media print {
+            html, body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            #mainLayout, #previewPanel, #previewScrollContainer {
+                display: block !important;
+                width: 100% !important;
+                height: auto !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: #ffffff !important;
+            }
+
+            .a4-sheet {
+                width: 210mm !important;
+                min-height: auto !important;
+                margin: 0 auto !important;
+                padding: 7mm 6mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-after: always;
+                break-after: page;
+            }
+
+            .a4-sheet:last-child {
+                page-break-after: auto;
+                break-after: auto;
+            }
+
+            .sticker-item {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin: 0mm;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- TOP HEADER BAR (Hidden on Print) -->
+    <header class="no-print bg-slate-900 border-b border-slate-800 px-3 sm:px-5 py-2.5 flex items-center justify-between sticky top-0 z-30">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-950 font-extrabold text-sm shadow">
+                AS
+            </div>
+            <div>
+                <h1 class="text-sm sm:text-base font-bold text-white leading-tight">A.S. ENTERPRISE</h1>
+                <p class="text-[11px] text-slate-400">Crisp A4 Sticker Sheet Maker</p>
+            </div>
+        </div>
+
+        <!-- Mobile Mode Switcher (Edit vs Preview) -->
+        <div class="flex lg:hidden bg-slate-800 p-1 rounded-lg border border-slate-700">
+            <button id="mobileBtnEdit" onclick="setMobileView('edit')" class="px-3 py-1 rounded-md text-xs font-bold bg-emerald-500 text-slate-950 transition">
+                Edit Prices
+            </button>
+            <button id="mobileBtnPreview" onclick="setMobileView('preview')" class="px-3 py-1 rounded-md text-xs font-bold text-slate-300 hover:text-white transition">
+                Preview (<span id="mobileTotalCount">30</span>)
+            </button>
+        </div>
+
+        <!-- Right Actions -->
+        <div class="flex items-center gap-2 sm:gap-3">
+            <div class="hidden sm:flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs">
+                <span class="text-slate-400">Total Stickers:</span>
+                <span id="headerTotalBadge" class="font-extrabold text-emerald-400">30 pcs</span>
+            </div>
+
+            <button onclick="window.print()" class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold rounded-lg text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                </svg>
+                <span>Print / Save PDF</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <div id="mainLayout" class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+
+        <!-- LEFT SIDEBAR: CONTROLS (Visible on PC, toggleable on Mobile) -->
+        <aside id="controlPanel" class="no-print w-full lg:w-[410px] xl:w-[430px] bg-slate-900 border-r border-slate-800 flex flex-col lg:h-[calc(100vh-57px)] overflow-y-auto">
+            
+            <!-- Control Tabs -->
+            <div class="flex border-b border-slate-800 bg-slate-950/50 sticky top-0 z-10 text-xs font-bold">
+                <button id="tabBtnPrices" onclick="switchTab('prices')" class="flex-1 py-3 border-b-2 border-emerald-400 text-emerald-400 text-center transition">
+                    1. Price & Qty
+                </button>
+                <button id="tabBtnLayout" onclick="switchTab('layout')" class="flex-1 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-center transition">
+                    2. Text & Position
+                </button>
+                <button id="tabBtnSize" onclick="switchTab('size')" class="flex-1 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-center transition">
+                    3. Size & Gap
+                </button>
+            </div>
+
+            <div class="p-4 space-y-5 flex-1 text-xs">
+
+                <!-- TAB 1: PRICES & QUANTITIES -->
+                <div id="tabPrices" class="space-y-4">
+                    
+                    <!-- Custom Price & Qty Input -->
+                    <div class="bg-slate-800/90 border border-slate-700 rounded-xl p-3 space-y-2.5">
+                        <label class="font-bold text-slate-200 block">Add Custom Price & Sticker Count:</label>
+                        <div class="flex gap-2">
+                            <div class="flex-1">
+                                <span class="text-[10px] text-slate-400 block mb-1">Price (TK)</span>
+                                <input id="newPriceInput" type="number" placeholder="e.g. 220" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-xs focus:border-emerald-400 outline-none">
+                            </div>
+                            <div class="w-24">
+                                <span class="text-[10px] text-slate-400 block mb-1">Quantity (Pcs)</span>
+                                <input id="newQtyInput" type="number" value="30" placeholder="30" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-emerald-400 font-bold text-center text-xs focus:border-emerald-400 outline-none">
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="addCustomPrice()" class="h-[34px] px-4 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-extrabold rounded-lg transition">
+                                    + Add
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Sticker List -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between px-1">
+                            <span class="font-bold text-slate-300 uppercase tracking-wider text-[11px]">Active Sticker List</span>
+                            <div class="flex gap-1.5">
+                                <button onclick="setAllQuantities(24)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] border border-slate-700">All 24</button>
+                                <button onclick="setAllQuantities(30)" class="px-2 py-0.5 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/70 rounded text-[11px] font-bold">All 30</button>
+                                <button onclick="resetToDefault220()" class="px-2 py-0.5 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 rounded text-[11px] border border-slate-700">Reset (220×30)</button>
+                            </div>
+                        </div>
+
+                        <div id="priceListContainer" class="space-y-2">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: TEXT & ADDRESS POSITION -->
+                <div id="tabLayout" class="space-y-4 hidden">
+                    <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-3 space-y-2">
+                        <label class="font-bold text-emerald-400 block">Line Order (Address vs Price):</label>
+                        <div class="grid grid-cols-1 gap-2">
+                            <button id="orderBtnAddressBottom" onclick="setLineOrder('address-bottom')" class="p-2.5 rounded-lg border text-left transition flex items-center justify-between">
+                                <div>
+                                    <div class="font-bold text-white">Price Middle, Address Bottom</div>
+                                    <div class="text-[11px] text-slate-400">Supplyer by → A.S. ENTERPRISE → MRP. 220 TK → Address</div>
+                                </div>
+                                <span class="text-emerald-400 font-bold">✓</span>
+                            </button>
+                            <button id="orderBtnPriceBottom" onclick="setLineOrder('price-bottom')" class="p-2.5 rounded-lg border text-left transition flex items-center justify-between">
+                                <div>
+                                    <div class="font-bold text-white">Address Middle, Price Bottom (Screenshot)</div>
+                                    <div class="text-[11px] text-slate-400">Supplyer by → A.S. ENTERPRISE → Address → MRP. 220 TK</div>
+                                </div>
+                                <span class="text-emerald-400 font-bold hidden">✓</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 bg-slate-800/50 border border-slate-800 rounded-xl p-3">
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Line 1 (Top Header)</label>
+                            <input id="inputTitle" type="text" value="Supplyer by" oninput="updateTextConfig()" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-white font-semibold focus:border-emerald-400 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Line 2 (Company Name)</label>
+                            <input id="inputName" type="text" value="A.S. ENTERPRISE" oninput="updateTextConfig()" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-white font-bold focus:border-emerald-400 outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-slate-300 font-semibold mb-1">Price Prefix</label>
+                                <input id="inputPrefix" type="text" value="MRP." oninput="updateTextConfig()" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-white font-bold focus:border-emerald-400 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 font-semibold mb-1">Price Suffix</label>
+                                <input id="inputSuffix" type="text" value="TK" oninput="updateTextConfig()" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-white font-bold focus:border-emerald-400 outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Address Line</label>
+                            <input id="inputAddress" type="text" value="Kaji Bari, Kuril, Vatara, Dhaka" oninput="updateTextConfig()" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-white font-semibold focus:border-emerald-400 outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: SIZE & GAP CONTROLS -->
+                <div id="tabSize" class="space-y-4 hidden">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="applySizePreset(44, 25, 4.5, 1, 13)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-center font-bold text-emerald-400">
+                            4 Col Wide (44×25mm)
+                        </button>
+                        <button onclick="applySizePreset(37, 25, 4.5, 1, 12)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-center font-bold text-slate-200">
+                            5 Col Fit 30 (37×25mm)
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-800 rounded-xl p-3 space-y-3.5">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-slate-300 font-semibold">Sticker Width (Side Long)</span>
+                                <span id="lblWidth" class="text-emerald-400 font-bold">44 mm</span>
+                            </div>
+                            <input id="rngWidth" type="range" min="25" max="60" step="0.5" value="44" oninput="updateSizeConfig()" class="w-full accent-emerald-400">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-slate-300 font-semibold">Sticker Height</span>
+                                <span id="lblHeight" class="text-emerald-400 font-bold">25 mm</span>
+                            </div>
+                            <input id="rngHeight" type="range" min="18" max="40" step="0.5" value="25" oninput="updateSizeConfig()" class="w-full accent-emerald-400">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-slate-300 font-semibold">Line Gap (2 Line-er Majhe Gap)</span>
+                                <span id="lblLineGap" class="text-emerald-400 font-bold">1 px</span>
+                            </div>
+                            <input id="rngLineGap" type="range" min="0" max="6" step="0.5" value="1" oninput="updateSizeConfig()" class="w-full accent-emerald-400">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-slate-300 font-semibold">Corner Roundness</span>
+                                <span id="lblRadius" class="text-emerald-400 font-bold">4.5 mm</span>
+                            </div>
+                            <input id="rngRadius" type="range" min="0" max="10" step="0.5" value="4.5" oninput="updateSizeConfig()" class="w-full accent-emerald-400">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-slate-300 font-semibold">Price Font Size (Boro Price)</span>
+                                <span id="lblPriceFont" class="text-emerald-400 font-bold">13 pt</span>
+                            </div>
+                            <input id="rngPriceFont" type="range" min="9" max="18" step="0.5" value="13" oninput="updateSizeConfig()" class="w-full accent-emerald-400">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Mobile Switch to Preview Button at Bottom of Sidebar -->
+            <div class="p-3 border-t border-slate-800 bg-slate-950 flex lg:hidden gap-2">
+                <button onclick="setMobileView('preview')" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg text-xs">
+                    👁️ View A4 Preview
+                </button>
+                <button onclick="window.print()" class="flex-1 py-2.5 bg-emerald-500 text-slate-950 font-extrabold rounded-lg text-xs">
+                    🖨️ Print / Save PDF
+                </button>
+            </div>
+        </aside>
+
+        <!-- RIGHT AREA: CRISP 1:1 A4 PREVIEW (Zero Blurry Scaling) -->
+        <main id="previewPanel" class="hidden lg:flex flex-1 flex-col bg-slate-950 lg:h-[calc(100vh-57px)] overflow-hidden">
+            
+            <!-- Sub-bar above A4 Preview (Hidden on Print) -->
+            <div class="no-print bg-slate-900/80 border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span><b>100% Crisp Vector Preview:</b> Pure black text (#000) with zero shadow.</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="pageCountInfo" class="font-bold text-emerald-400">1 A4 Page (30 Stickers)</span>
+                    <button onclick="setLineOrder(config.lineOrder === 'address-bottom' ? 'price-bottom' : 'address-bottom')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-[11px] font-semibold text-white transition">
+                        ⇅ Swap Address / Price Position
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scrollable A4 Container -->
+            <div id="previewScrollContainer" class="flex-1 overflow-auto p-3 sm:p-6">
+                <div id="a4PagesWrapper">
+                    <!-- A4 Sheets injected here by JS -->
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        // Default state: 1 item -> 220 TK with 30 pcs
+        let priceItems = [
+            { id: 1, price: 220, qty: 30 }
+        ];
+
+        let config = {
+            title: "Supplyer by",
+            name: "A.S. ENTERPRISE",
+            prefix: "MRP.",
+            suffix: "TK",
+            address: "Kaji Bari, Kuril, Vatara, Dhaka",
+            lineOrder: "address-bottom", // 'address-bottom' or 'price-bottom'
+            width: 44,
+            height: 25,
+            radius: 4.5,
+            lineGap: 1,
+            priceFont: 13
+        };
+
+        function addCustomPrice() {
+            const priceInput = document.getElementById('newPriceInput');
+            const qtyInput = document.getElementById('newQtyInput');
+            const priceVal = parseFloat(priceInput.value);
+            const qtyVal = parseInt(qtyInput.value);
+
+            if (isNaN(priceVal) || priceVal <= 0) {
+                priceInput.focus();
+                return;
+            }
+
+            const validQty = isNaN(qtyVal) || qtyVal <= 0 ? 30 : qtyVal;
+            const existing = priceItems.find(item => Number(item.price) === priceVal);
+
+            if (existing) {
+                existing.qty += validQty;
+            } else {
+                priceItems.push({
+                    id: Date.now(),
+                    price: priceVal,
+                    qty: validQty
+                });
+            }
+
+            priceInput.value = '';
+            refreshAll();
+        }
+
+        function changeQty(id, delta) {
+            const item = priceItems.find(p => p.id === id);
+            if (item) {
+                item.qty = Math.max(0, item.qty + delta);
+                refreshAll();
+            }
+        }
+
+        function updateItemPrice(id, newPrice) {
+            const item = priceItems.find(p => p.id === id);
+            if (item) {
+                item.price = newPrice;
+                refreshAll();
+            }
+        }
+
+        function updateItemQty(id, newQty) {
+            const item = priceItems.find(p => p.id === id);
+            if (item) {
+                item.qty = Math.max(0, parseInt(newQty) || 0);
+                refreshAll();
+            }
+        }
+
+        function removePriceItem(id) {
+            if (priceItems.length <= 1) {
+                priceItems[0].qty = 0;
+            } else {
+                priceItems = priceItems.filter(p => p.id !== id);
+            }
+            refreshAll();
+        }
+
+        function setAllQuantities(qty) {
+            priceItems.forEach(item => item.qty = qty);
+            refreshAll();
+        }
+
+        function resetToDefault220() {
+            priceItems = [{ id: 1, price: 220, qty: 30 }];
+            refreshAll();
+        }
+
+        // Render Active Price Rows
+        function renderPriceList() {
+            const container = document.getElementById('priceListContainer');
+            container.innerHTML = priceItems.map((item, idx) => `
+                <div class="bg-slate-800/90 border border-slate-700 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-slate-900 text-slate-400 text-[11px] font-bold flex items-center justify-center">${idx + 1}</span>
+                        <div class="flex items-center gap-1">
+                            <span class="text-slate-400 font-semibold">${escapeHtml(config.prefix)}</span>
+                            <input type="number" value="${item.price}" onchange="updateItemPrice(${item.id}, this.value)" class="w-16 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white font-extrabold text-xs text-center focus:border-emerald-400 outline-none">
+                            <span class="text-slate-400 font-semibold">${escapeHtml(config.suffix)}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                        <button onclick="changeQty(${item.id}, -5)" class="px-1.5 py-1 bg-slate-700 hover:bg-slate-600 rounded text-white font-bold text-[11px]">-5</button>
+                        <button onclick="changeQty(${item.id}, -1)" class="w-6 py-1 bg-slate-700 hover:bg-slate-600 rounded text-white font-bold text-xs">-</button>
+                        <input type="number" min="0" value="${item.qty}" onchange="updateItemQty(${item.id}, this.value)" class="w-12 bg-slate-950 border border-slate-700 rounded py-1 text-center font-extrabold text-emerald-400 text-xs focus:border-emerald-400 outline-none">
+                        <button onclick="changeQty(${item.id}, 1)" class="w-6 py-1 bg-slate-700 hover:bg-slate-600 rounded text-white font-bold text-xs">+</button>
+                        <button onclick="changeQty(${item.id}, 5)" class="px-1.5 py-1 bg-slate-700 hover:bg-slate-600 rounded text-white font-bold text-[11px]">+5</button>
+                        <button onclick="removePriceItem(${item.id})" class="p-1 text-rose-400 hover:text-rose-300 ml-0.5" title="Remove">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        // Calculate how many stickers fit per A4 page and paginate cleanly
+        function renderA4Sheets() {
+            const wrapper = document.getElementById('a4PagesWrapper');
+            let allStickers = [];
+
+            const safeTitle = escapeHtml(config.title);
+            const safeName = escapeHtml(config.name);
+            const safeAddress = escapeHtml(config.address);
+            const safePrefix = escapeHtml(config.prefix);
+            const safeSuffix = escapeHtml(config.suffix);
+
+            priceItems.forEach(item => {
+                const count = Math.max(0, parseInt(item.qty) || 0);
+                const priceText = `${safePrefix} ${escapeHtml(item.price)} ${safeSuffix}`.trim();
+
+                for (let i = 0; i < count; i++) {
+                    if (config.lineOrder === 'address-bottom') {
+                        allStickers.push(`
+                            <div class="sticker-item">
+                                <div class="st-line st-title">${safeTitle}</div>
+                                <div class="st-line st-name">${safeName}</div>
+                                <div class="st-line st-price">${priceText}</div>
+                                <div class="st-line st-address">${safeAddress}</div>
+                            </div>
+                        `);
+                    } else {
+                        allStickers.push(`
+                            <div class="sticker-item">
+                                <div class="st-line st-title">${safeTitle}</div>
+                                <div class="st-line st-name">${safeName}</div>
+                                <div class="st-line st-address">${safeAddress}</div>
+                                <div class="st-line st-price">${priceText}</div>
+                            </div>
+                        `);
+                    }
+                }
+            });
+
+            const total = allStickers.length;
+            document.getElementById('headerTotalBadge').innerText = `${total} pcs`;
+            document.getElementById('mobileTotalCount').innerText = total;
+
+            if (total === 0) {
+                wrapper.innerHTML = `
+                    <div class="a4-sheet flex items-center justify-center">
+                        <div class="text-center p-8">
+                            <p class="text-lg font-bold text-slate-700">No Stickers Selected</p>
+                            <p class="text-xs text-slate-500 mt-1">Increase quantity or tap a price chip on the left panel.</p>
+                            <button onclick="resetToDefault220()" class="mt-4 px-4 py-2 bg-emerald-500 text-slate-950 font-bold rounded-lg text-xs">
+                                Restore Default (220 TK × 30 pcs)
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('pageCountInfo').innerText = `0 Stickers`;
+                return;
+            }
+
+            // Calculate columns and rows that fit inside usable A4 area (196mm x 281mm)
+            const cols = Math.max(1, Math.floor((196 + 3) / (config.width + 3)));
+            const rows = Math.max(1, Math.floor((281 + 3) / (config.height + 3)));
+            const stickersPerPage = cols * rows;
+
+            const pagesHtml = [];
+            for (let i = 0; i < total; i += stickersPerPage) {
+                const pageSlice = allStickers.slice(i, i + stickersPerPage);
+                pagesHtml.push(`
+                    <div class="a4-sheet">
+                        <div class="sticker-grid">
+                            ${pageSlice.join('')}
+                        </div>
+                    </div>
+                `);
+            }
+
+            wrapper.innerHTML = pagesHtml.join('');
+            document.getElementById('pageCountInfo').innerText = `${pagesHtml.length} A4 Page${pagesHtml.length > 1 ? 's' : ''} (${total} Stickers • ${cols} per row)`;
+        }
+
+        function setLineOrder(order) {
+            config.lineOrder = order;
+            const btnAddrBottom = document.getElementById('orderBtnAddressBottom');
+            const btnPriceBottom = document.getElementById('orderBtnPriceBottom');
+
+            if (order === 'address-bottom') {
+                btnAddrBottom.className = "p-2.5 rounded-lg border border-emerald-500 bg-emerald-950/30 text-left transition flex items-center justify-between";
+                btnPriceBottom.className = "p-2.5 rounded-lg border border-slate-700 bg-slate-900/60 text-left transition flex items-center justify-between";
+                btnAddrBottom.querySelector('span').classList.remove('hidden');
+                btnPriceBottom.querySelector('span').classList.add('hidden');
+            } else {
+                btnPriceBottom.className = "p-2.5 rounded-lg border border-emerald-500 bg-emerald-950/30 text-left transition flex items-center justify-between";
+                btnAddrBottom.className = "p-2.5 rounded-lg border border-slate-700 bg-slate-900/60 text-left transition flex items-center justify-between";
+                btnPriceBottom.querySelector('span').classList.remove('hidden');
+                btnAddrBottom.querySelector('span').classList.add('hidden');
+            }
+
+            renderA4Sheets();
+        }
+
+        function updateTextConfig() {
+            config.title = document.getElementById('inputTitle').value;
+            config.name = document.getElementById('inputName').value;
+            config.prefix = document.getElementById('inputPrefix').value;
+            config.suffix = document.getElementById('inputSuffix').value;
+            config.address = document.getElementById('inputAddress').value;
+            refreshAll();
+        }
+
+        function updateSizeConfig() {
+            config.width = parseFloat(document.getElementById('rngWidth').value);
+            config.height = parseFloat(document.getElementById('rngHeight').value);
+            config.lineGap = parseFloat(document.getElementById('rngLineGap').value);
+            config.radius = parseFloat(document.getElementById('rngRadius').value);
+            config.priceFont = parseFloat(document.getElementById('rngPriceFont').value);
+
+            document.getElementById('lblWidth').innerText = `${config.width} mm`;
+            document.getElementById('lblHeight').innerText = `${config.height} mm`;
+            document.getElementById('lblLineGap').innerText = `${config.lineGap} px`;
+            document.getElementById('lblRadius').innerText = `${config.radius} mm`;
+            document.getElementById('lblPriceFont').innerText = `${config.priceFont} pt`;
+
+            document.documentElement.style.setProperty('--sticker-width', `${config.width}mm`);
+            document.documentElement.style.setProperty('--sticker-height', `${config.height}mm`);
+            document.documentElement.style.setProperty('--line-gap', `${config.lineGap}px`);
+            document.documentElement.style.setProperty('--sticker-radius', `${config.radius}mm`);
+            document.documentElement.style.setProperty('--price-size', `${config.priceFont}pt`);
+
+            renderA4Sheets();
+        }
+
+        function applySizePreset(w, h, r, gap, font) {
+            document.getElementById('rngWidth').value = w;
+            document.getElementById('rngHeight').value = h;
+            document.getElementById('rngRadius').value = r;
+            document.getElementById('rngLineGap').value = gap;
+            document.getElementById('rngPriceFont').value = font;
+            updateSizeConfig();
+        }
+
+        // Sidebar Tab Switcher
+        function switchTab(tab) {
+            ['prices', 'layout', 'size'].forEach(t => {
+                document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('hidden');
+                document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1)).className =
+                    "flex-1 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-center transition";
+            });
+
+            const activeContent = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            const activeBtn = document.getElementById('tabBtn' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            activeContent.classList.remove('hidden');
+            activeBtn.className = "flex-1 py-3 border-b-2 border-emerald-400 text-emerald-400 text-center transition";
+        }
+
+        // Mobile View Switcher (Edit vs 1:1 Crisp Preview)
+        function setMobileView(view) {
+            const controlPanel = document.getElementById('controlPanel');
+            const previewPanel = document.getElementById('previewPanel');
+            const btnEdit = document.getElementById('mobileBtnEdit');
+            const btnPreview = document.getElementById('mobileBtnPreview');
+
+            if (view === 'edit') {
+                controlPanel.classList.remove('hidden');
+                previewPanel.classList.add('hidden');
+                btnEdit.className = "px-3 py-1 rounded-md text-xs font-bold bg-emerald-500 text-slate-950 transition";
+                btnPreview.className = "px-3 py-1 rounded-md text-xs font-bold text-slate-300 hover:text-white transition";
+            } else {
+                controlPanel.classList.add('hidden');
+                previewPanel.classList.remove('hidden');
+                previewPanel.classList.add('flex');
+                btnPreview.className = "px-3 py-1 rounded-md text-xs font-bold bg-emerald-500 text-slate-950 transition";
+                btnEdit.className = "px-3 py-1 rounded-md text-xs font-bold text-slate-300 hover:text-white transition";
+            }
+        }
+
+        function refreshAll() {
+            renderPriceList();
+            renderA4Sheets();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setLineOrder('address-bottom');
+            updateSizeConfig();
+            refreshAll();
+        });
+    </script>
+</body>
+</html>
